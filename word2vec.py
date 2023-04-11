@@ -1,7 +1,7 @@
 import pandas as pd
-from gensim.models import Word2Vec
+import networkx as nx
+from node2vec import Node2Vec
 from gensim.models.callbacks import CallbackAny2Vec
-import argparse
 import numpy as np
 from sklearn.cluster import KMeans
 
