@@ -7,6 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import SpectralClustering
 from collections import Counter
+from sklearn.neighbors import LocalOutlierFactor
 
 # Load the dataframe
 df = pd.read_csv('ft-v05.2023-04-11.060000-0600.csv')
@@ -81,6 +82,26 @@ counts = Counter(cluster_labels)
 for cluster_label, count in counts.items():
     print(f"Cluster {cluster_label}: {count} nodes")
 
+# Anomaly detection
+# Calculate the LOF scores for each node
+
+# One common approach for anomaly detection is to use the Local Outlier Factor (LOF) algorithm,
+# which measures the local density of a point relative to its neighbors to identify points that
+# have a significantly lower density.
+
+lof = LocalOutlierFactor(n_neighbors=20, contamination=0.05)
+lof_scores = lof.fit_predict(list(embeddings.values()))
+
+# Print the nodes with the highest LOF scores
+
+# A LOF score of 1 indicates that the node is very far away from its neighbors and does not
+# fit well within the local neighborhood structure of the graph. This could indicate that
+# these nodes are potentially malicious or exhibit behavior that is significantly different
+# from the rest of the network. It is important to investigate these nodes further to
+# determine whether they are indeed anomalous and require further action.
+
+for node, score in sorted(zip(graph.nodes(), lof_scores), key=lambda x: x[1], reverse=True)[:10]:
+    print(f"Node {node} has an LOF score of {score:.4f}")
 
 # Perform kmeans on the embeddings
 # Convert the embeddings into a numpy array
