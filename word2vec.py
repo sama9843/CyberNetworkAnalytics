@@ -72,7 +72,9 @@ for node in graph:
 X = np.array(list(embeddings.values()))
 
 # Define the number of clusters
-num_clusters = 10
+#num_clusters = 10
+# Use the elbow method defined in kmeans.
+elbow(df)
 
 # Train the k-means model
 kmeans = KMeans(n_clusters=num_clusters, random_state=42)
@@ -85,7 +87,7 @@ cluster_labels = kmeans.labels_
 for i in range(num_clusters):
     print(f"Cluster {i}: {sum(cluster_labels == i)} nodes")
 
-for i in range(5):
+for i in range(num_clusters):
     cluster_nodes = [node for node, label in zip(embeddings.keys(), kmeans.labels_) if label == i]
     print(f"Cluster {i} - number of nodes: {len(cluster_nodes)}")
     top_sources = df[df['srcaddr'].isin(cluster_nodes)]['srcaddr'].value_counts().nlargest(5)
