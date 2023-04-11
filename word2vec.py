@@ -106,6 +106,7 @@ for node, score in sorted(zip(graph.nodes(), lof_scores), key=lambda x: x[1], re
     print(f"Node {node} has an LOF score of {score:.4f}")
 	
 # How many nodes have an LOF score of > 0.85
+lof_nodes = [node for node, score in zip(graph.nodes(), lof_scores) if score > 0.85]
 print(f"{len(lof_nodes)} nodes have an LOF score > 0.85")
 
 # Perform kmeans on the embeddings
