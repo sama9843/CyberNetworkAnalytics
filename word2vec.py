@@ -27,6 +27,12 @@ except FileNotFoundError:
 df = sample(raw_data)
 
 # Define a callback to print progress during training
+
+# The progress logger is a callback function used during the training of a Node2Vec model that prints out the loss
+# value after each epoch. The loss value is a measure of how well the model is able to predict the context words
+# given a target word. By printing out the loss value, the progress logger can provide feedback on the training
+# progress of the model, and allow for adjustments to be made to the training parameters if necessary.
+
 class ProgressLogger(CallbackAny2Vec):
     def __init__(self):
         self.epoch = 0
@@ -37,57 +43,52 @@ class ProgressLogger(CallbackAny2Vec):
         self.loss = 0
 
 # Convert the dataframe to a graph representation
-graph = {}
-for _, row in df.iterrows():
-    source = row['srcaddr']
-    target = row['dstaddr']
-    if source not in graph:
-        graph[source] = []
-    if target not in graph:
-        graph[target] = []
-    graph[source].append(target)
-    graph[target].append(source)
+graph = nx.from_pandas_edgelist(df, source='srcaddr', target='dstaddr')
 
 # Train the node2vec model
-model = Word2Vec(
-    sentences=graph.values(),
-    vector_size=64,
-    window=10,
-    min_count=1,
-    workers=8,
-    sg=1,
-    hs=0,
-    negative=5,
-    ns_exponent=0.75,
-    epochs=50,
-    compute_loss=True,
-    callbacks=[ProgressLogger()]
-)
+
+# node2vec returns a trained word embedding model, which can be used to obtain embeddings for individual nodes
+# in a graph. These embeddings are typically dense, low-dimensional vectors that capture the semantic or structural
+# relationships between nodes in the graph.
+
+# In the context of node2vec, generating walks means creating sequences of nodes that simulate a random walk
+# in the graph. This is done by starting at a random node and then at each step, selecting the next node based
+# on a transition probability function that takes into account the local neighborhood structure of the graph.
+
+# By generating multiple such random walks, we obtain a set of sequences that represent different paths through
+# the graph, allowing the node2vec model to learn the embeddings of the nodes based on their co-occurrence patterns
+# in these paths.
+
+node2vec = Node2Vec(graph, dimensions=64, walk_length=30, num_walks=200, p=0.5, q=2, workers=8)
+model = node2vec.fit(window=10, min_count=1, batch_words=4, callbacks=[ProgressLogger()])
 
 # Get the embeddings for all nodes in the graph
 embeddings = {}
-for node in graph:
+for node in graph.nodes():
     embeddings[node] = model.wv[node]
 
+# Perform kmeans on the embeddings
 # Convert the embeddings into a numpy array
 X = np.array(list(embeddings.values()))
 
 # Define the number of clusters
-# Use the elbow method defined in kmeans to determine the best number of clusters for the dataset.
 elbow(df)
 
-# Train the k-means model and change n_clusters to the best clusters defined in the elbow method.
+# Train the k-means model
 kmeans = KMeans(n_clusters=3, random_state=42)
 kmeans.fit(X)
 
 # Get the cluster labels for each node
-cluster_labels = kmeans.labels_
+cluster_labels = {}
+for i, node in enumerate(graph):
+    cluster_labels[node] = kmeans.labels_[i]
 
 # Print the number of nodes in each cluster
-for i in range(3):
+for i in range(num_clusters):
     print(f"Cluster {i}: {sum(cluster_labels == i)} nodes")
 
-for i in range(3):
+#Analyze each cluster
+for i in range(num_clusters):
     cluster_nodes = [node for node, label in zip(embeddings.keys(), kmeans.labels_) if label == i]
     print(f"Cluster {i} - number of nodes: {len(cluster_nodes)}")
     top_sources = df[df['srcaddr'].isin(cluster_nodes)]['srcaddr'].value_counts().nlargest(5)
@@ -95,4 +96,3 @@ for i in range(3):
     print(f"Top sources:\n{top_sources}")
     print(f"Top targets:\n{top_targets}\n")
 
-    
