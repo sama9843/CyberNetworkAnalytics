@@ -33,7 +33,9 @@ class ProgressLogger(CallbackAny2Vec):
         self.loss = 0
 
 # Convert the dataframe to a graph representation
-graph = nx.from_pandas_edgelist(df, source='srcaddr', target='dstaddr')
+graph = nx.from_pandas_edgelist(df, source='srcaddr', target='dstaddr', 
+                                edge_attr=['dpkts', 'doctets','srcport','dstport','prot',
+                                           'tcp_flags'])
 
 # Train the node2vec model
 
@@ -102,6 +104,9 @@ lof_scores = lof.fit_predict(list(embeddings.values()))
 
 for node, score in sorted(zip(graph.nodes(), lof_scores), key=lambda x: x[1], reverse=True)[:10]:
     print(f"Node {node} has an LOF score of {score:.4f}")
+	
+# How many nodes have an LOF score of > 0.85
+print(f"{len(lof_nodes)} nodes have an LOF score > 0.85")
 
 # Perform kmeans on the embeddings
 # Convert the embeddings into a numpy array
