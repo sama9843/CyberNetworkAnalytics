@@ -4,7 +4,6 @@ from gensim.models.callbacks import CallbackAny2Vec
 import argparse
 import numpy as np
 from sklearn.cluster import KMeans
-import plotext
 
 # get sample
 def sample(df):
