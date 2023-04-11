@@ -42,6 +42,10 @@ def kMeans(df):
 
 def tests(df):
     print(df.head)
+    for i in range(20):
+        print("Column",i)
+        print(df.iloc[:,i].unique())
+    #print(df.iloc[:,19].unique())
     #print("Types")
     #print(df.dtypes)
 
@@ -59,7 +63,7 @@ def main():
     tests(raw_data)
     #print("KMeans")
     #tests(kMeans(raw_data))
-    print("Elbow")
-    elbow(raw_data)
+    #print("Elbow")
+    #elbow(raw_data)
 
 main()
