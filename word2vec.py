@@ -4,26 +4,16 @@ from node2vec import Node2Vec
 from gensim.models.callbacks import CallbackAny2Vec
 import numpy as np
 from sklearn.cluster import KMeans
-
-# get sample
-def sample(df):
-    sampled = df.sample(frac=0.01, random_state=8)
-    return sampled
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.cluster import SpectralClustering
+from collections import Counter
 
 # Load the dataframe
-parser = argparse.ArgumentParser()
-parser.add_argument('--RawDatafile', type=str, required=True, help="The csv raw data file")
-FLAGS = parser.parse_args()
+df = pd.read_csv('ft-v05.2023-04-11.060000-0600.csv')
 
-try:
-    raw_data = pd.read_csv(FLAGS.RawDatafile) #Raw data #depends on Netflow file
-    print("File Loaded in.")
-
-except FileNotFoundError:
-    print("File not found. Aborting")
-    sys.exit(1)
-
-df = sample(raw_data)
+def sample(df):
+	sampled = df.sample(frac=0.001, random_state=8)
+	return sampled
 
 # Define a callback to print progress during training
 
@@ -66,15 +56,41 @@ embeddings = {}
 for node in graph.nodes():
     embeddings[node] = model.wv[node]
 
+# Compute the cosine similarity between the embeddings of all pairs of nodes
+similarity_matrix = cosine_similarity(list(embeddings.values()))
+
+# Define the number of clusters
+num_clusters = 5
+
+# Perform spectral clustering on the similarity matrix
+# The idea behind spectral clustering is to first construct a similarity matrix that
+# captures the pairwise similarities between the data points, and then to use the
+# eigenvectors of this matrix to embed the data points into a low-dimensional space.
+# Once the data points are embedded in this low-dimensional space, a clustering algorithm
+# is applied to partition the data points into clusters.
+
+spectral = SpectralClustering(n_clusters=num_clusters, affinity='precomputed', assign_labels='discretize')
+cluster_labels = spectral.fit_predict(similarity_matrix)
+
+# Print the cluster labels for each node (tells us which IP's belong to which cluster)
+for node, label in zip(embeddings.keys(), cluster_labels):
+    print(f"Node {node} belongs to cluster {label}")
+
+# Prints out how many nodes per cluster
+counts = Counter(cluster_labels)
+for cluster_label, count in counts.items():
+    print(f"Cluster {cluster_label}: {count} nodes")
+
+
 # Perform kmeans on the embeddings
 # Convert the embeddings into a numpy array
 X = np.array(list(embeddings.values()))
 
 # Define the number of clusters
-elbow(df)
+num_clusters = 10
 
 # Train the k-means model
-kmeans = KMeans(n_clusters=3, random_state=42)
+kmeans = KMeans(n_clusters=num_clusters, random_state=42)
 kmeans.fit(X)
 
 # Get the cluster labels for each node
@@ -94,4 +110,3 @@ for i in range(num_clusters):
     top_targets = df[df['dstaddr'].isin(cluster_nodes)]['dstaddr'].value_counts().nlargest(5)
     print(f"Top sources:\n{top_sources}")
     print(f"Top targets:\n{top_targets}\n")
-
