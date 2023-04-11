@@ -73,16 +73,16 @@ num_clusters = 5
 # is applied to partition the data points into clusters.
 
 spectral = SpectralClustering(n_clusters=num_clusters, affinity='precomputed', assign_labels='discretize')
-cluster_labels = spectral.fit_predict(similarity_matrix)
+spec_labels = spectral.fit_predict(similarity_matrix)
 
 # Print the cluster labels for each node (tells us which IP's belong to which cluster)
-for node, label in zip(embeddings.keys(), cluster_labels):
+for node, label in zip(embeddings.keys(), spec_labels):
     print(f"Node {node} belongs to cluster {label}")
 
 # Prints out how many nodes per cluster
-counts = Counter(cluster_labels)
-for cluster_label, count in counts.items():
-    print(f"Cluster {cluster_label}: {count} nodes")
+counts = Counter(spec_labels)
+for spec_label, count in counts.items():
+    print(f"Cluster {spec_label}: {count} nodes")
 
 # Anomaly detection
 # Calculate the LOF scores for each node
