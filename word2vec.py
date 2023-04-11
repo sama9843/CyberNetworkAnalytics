@@ -4,6 +4,7 @@ from gensim.models.callbacks import CallbackAny2Vec
 import argparse
 import numpy as np
 from sklearn.cluster import KMeans
+import plotext
 
 # get sample
 def sample(df):
@@ -72,22 +73,21 @@ for node in graph:
 X = np.array(list(embeddings.values()))
 
 # Define the number of clusters
-#num_clusters = 10
-# Use the elbow method defined in kmeans.
+# Use the elbow method defined in kmeans to determine the best number of clusters for the dataset.
 elbow(df)
 
-# Train the k-means model
-kmeans = KMeans(n_clusters=num_clusters, random_state=42)
+# Train the k-means model and change n_clusters to the best clusters defined in the elbow method.
+kmeans = KMeans(n_clusters=3, random_state=42)
 kmeans.fit(X)
 
 # Get the cluster labels for each node
 cluster_labels = kmeans.labels_
 
 # Print the number of nodes in each cluster
-for i in range(num_clusters):
+for i in range(3):
     print(f"Cluster {i}: {sum(cluster_labels == i)} nodes")
 
-for i in range(num_clusters):
+for i in range(3):
     cluster_nodes = [node for node, label in zip(embeddings.keys(), kmeans.labels_) if label == i]
     print(f"Cluster {i} - number of nodes: {len(cluster_nodes)}")
     top_sources = df[df['srcaddr'].isin(cluster_nodes)]['srcaddr'].value_counts().nlargest(5)
@@ -95,4 +95,4 @@ for i in range(num_clusters):
     print(f"Top sources:\n{top_sources}")
     print(f"Top targets:\n{top_targets}\n")
 
-
+    
